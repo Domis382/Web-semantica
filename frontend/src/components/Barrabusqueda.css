@@ -1,0 +1,55 @@
+.search-container {
+width: 100%;
+min-height: 90vh;
+display: flex;
+justify-content: center;
+align-items: center;
+flex-direction: column;
+border-radius: 10px;
+background-image: url("https://images.pexels.com/photos/15597164/pexels-photo-15597164/free-photo-of-naturaleza-creativo-rocas-fotografo.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1");
+}
+.title{
+    color: whitesmoke;
+    font-size: 32px;
+    align-items: center;
+    justify-content: center;
+}
+.search-bar {
+width: 550px;
+background: white;
+padding: 14px 24px;
+border-radius: 40px;
+display: flex;
+align-items: center;
+gap: 18px;
+box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.search-icon {
+width: 22px;
+height: 22px;
+color: #b5b5b5;
+}
+.search-icon:hover{
+color: #8e7bff;
+}
+
+.search-input {
+flex: 1;
+border: none;
+outline: none;
+font-size: 16px;
+background: transparent;
+color: #555;
+}
+
+.search-input::placeholder {
+color: #b8b8b8;
+}
+
+.dots-menu span {
+width: 6px;
+height: 6px;
+background: #8e7bff;
+border-radius: 50%;
+}

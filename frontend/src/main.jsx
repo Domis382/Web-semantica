@@ -4,9 +4,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css'
 import App from './App.jsx'
+import BarraBusqueda from './components/BarraBusqueda.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <BarraBusqueda />
   </StrictMode>,
 )

@@ -60,11 +60,7 @@ border-radius: 50%;
   width: 100%;
   padding: 56px 20px;
   box-sizing: border-box;
-
-  /* Fondo transparente */
   background: transparent;
-
-  /* Efecto de volumen (elevado) */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 16px;

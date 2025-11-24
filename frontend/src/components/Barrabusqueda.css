@@ -1,12 +1,13 @@
 .search-container {
-width: 100%;
-min-height: 90vh;
-display: flex;
-justify-content: center;
-align-items: center;
-flex-direction: column;
-border-radius: 10px;
-background-image: url("https://images.pexels.com/photos/15597164/pexels-photo-15597164/free-photo-of-naturaleza-creativo-rocas-fotografo.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1");
+  width: 100%;
+  min-height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  border-radius: 10px;
+  /* neutral background removed (no image) to keep UI professional */
+  background: linear-gradient(180deg, #920707 0%, #07a58b 60%);
 }
 .title{
     color: whitesmoke;
@@ -52,4 +53,138 @@ width: 6px;
 height: 6px;
 background: #8e7bff;
 border-radius: 50%;
+}
+
+/* New styles for Veterinaria static layout */
+.vet-container{
+  width: 100%;
+  padding: 56px 20px;
+  box-sizing: border-box;
+
+  /* Fondo transparente */
+  background: transparent;
+
+  /* Efecto de volumen (elevado) */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+
+  min-height: 70vh;
+  position: relative;
+  z-index: 10;
+}
+.vet-header{
+  max-width: 1100px;
+  margin: 0 auto 28px auto;
+  text-align: left;
+}
+.vet-title{
+  margin: 0;
+  font-size: 44px;
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.vet-desc{
+  margin: 8px 0 0 0;
+  color: #475569;
+  font-size: 16px;
+}
+.cards-grid{
+  max-width: 1100px;
+  margin: 20px auto 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+  gap: 18px;
+}
+.vet-search-wrap{
+  max-width: 1100px;
+  margin: 8px auto 18px auto;
+  padding: 0 12px;
+}
+.vet-search-bar{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  background: linear-gradient(90deg,#ffffff,#f8fafc);
+  padding:8px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(2,6,23,0.06);
+  border: 1px solid rgba(2,6,23,0.04);
+  width: 100%;
+}
+.vet-search-input{
+  flex:1;
+  border: none;
+  outline: none;
+  padding: 10px 12px;
+  font-size: 15px;
+  background: transparent;
+  color: #0b1220;
+}
+.vet-search-input::placeholder{ color: #94a3b8 }
+.vet-search-btn{
+  background: #06b6d4;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(6,182,212,0.12);
+}
+.vet-search-btn svg{ display:block }
+.vet-search-btn:active{ transform: translateY(1px) }
+
+.vet-reset-btn{
+  background: transparent;
+  color: #0b1220;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.vet-reset-btn:hover{ background: rgba(11,18,32,0.04) }
+.card{
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px 16px;
+  box-shadow: 0 8px 24px rgba(16,24,40,0.06);
+  border: 1px solid rgba(15,23,42,0.04);
+}
+.card-top{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.card-bullet{
+  display:inline-block;
+  color:#0ea5a4;
+  font-weight:700;
+}
+.card-title{
+  margin:0;
+  font-size:20px;
+  color:#0b1220;
+}
+.disease-list{
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0 0;
+  color: #374151;
+}
+.disease-item{
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(15,23,42,0.04);
+  font-size:14px;
+}
+
+@media (max-width:640px){
+  .vet-title{font-size:32px}
+  .cards-grid{gap:12px}
+  .vet-container{padding:36px 12px}
 }

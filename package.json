@@ -9,5 +9,9 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "n3": "^1.26.0",
+    "rdfxml-streaming-parser": "^3.2.0"
   }
 }

@@ -1,115 +1,115 @@
 import React, { useState } from "react";
-import './Barrabusqueda.css';
+import { buscarOntologia } from "../api";
+import "./Barrabusqueda.css";
 
 export default function BarraBusqueda() {
-  const [query, setQuery] = useState('');
-  const [filteredCards, setFilteredCards] = useState(null);
-  const cards = [
-    {
-      title: 'Perro',
-      diseases: ['Moquilo', 'Cancer', 'Rabia']
-    },
-    {
-      title: 'Gato',
-      diseases: ['Leucemia', 'Panleucopenia', 'Rabia']
-    },
-    {
-      title: 'Caballo',
-      diseases: ['Cólera', 'Tétanos', 'Encefalitis']
-    },
-    {
-      title: 'Vaca',
-      diseases: ['Brucelosis', 'Tuberculosis', 'Fiebre Aftosa']
-    },
-    {
-      title: 'Cerdo',
-      diseases: ['PRRS', 'Peste Porcina', 'Rinitis']
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSearch() {
+    const q = query.trim();
+    if (!q) {
+      setResults([]);
+      setError("");
+      return;
     }
-  ];
+
+    try {
+      setLoading(true);
+      setError("");
+      const data = await buscarOntologia(q);
+      setResults(data.results || []);
+    } catch (err) {
+      console.error(err);
+      setError("No se pudo consultar la ontología");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleReset() {
+    setQuery("");
+    setResults([]);
+    setError("");
+  }
 
   return (
     <section className="vet-container">
       <header className="vet-header">
         <h1 className="vet-title">Veterinaria</h1>
-        <p className="vet-desc">Esta ontologia trae nueva infromacion</p>
+        <p className="vet-desc">
+          Buscador conectado a la ontología Veterinaria.rdf
+        </p>
       </header>
 
-      {/* Search bar (static for now) */}
+      {/* Barra de búsqueda */}
       <div className="vet-search-wrap">
         <div className="vet-search-bar">
           <input
             className="vet-search-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar mascotas, enfermedades..."
-            aria-label="Buscar"
+            placeholder="Buscar enfermedades, especies..."
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                // trigger search on Enter
-                const q = query.trim().toLowerCase();
-                if (!q) {
-                  setFilteredCards(null);
-                } else {
-                  setFilteredCards(
-                    cards.filter((c) =>
-                      c.title.toLowerCase().includes(q) ||
-                      c.diseases.some((d) => d.toLowerCase().includes(q))
-                    )
-                  );
-                }
-              }
+              if (e.key === "Enter") handleSearch();
             }}
           />
-          <div style={{display: 'flex', gap: 8}}>
+
+          <div style={{ display: "flex", gap: 8 }}>
             <button
               className="vet-search-btn"
               type="button"
-              aria-label="Buscar"
-              onClick={() => {
-                const q = query.trim().toLowerCase();
-                if (!q) {
-                  setFilteredCards(null);
-                } else {
-                  setFilteredCards(
-                    cards.filter((c) =>
-                      c.title.toLowerCase().includes(q) ||
-                      c.diseases.some((d) => d.toLowerCase().includes(q))
-                    )
-                  );
-                }
-              }}
+              onClick={handleSearch}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                <path d="M21 21l-4.35-4.35" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="11" cy="11" r="5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              Buscar
             </button>
             <button
               className="vet-reset-btn"
               type="button"
-              onClick={() => {
-                setQuery('');
-                setFilteredCards(null);
-              }}
+              onClick={handleReset}
             >
-              Mostrar todos
+              Limpiar
             </button>
           </div>
         </div>
       </div>
 
+      {/* Estado de carga / error */}
+      {loading && <p className="vet-status">Buscando en la ontología…</p>}
+      {error && <p className="vet-status vet-error">{error}</p>}
+
+      {/* Resultados */}
       <div className="cards-grid">
-        {(filteredCards ?? cards).map((card) => (
-          <article className="card" key={card.title}>
+        {results.map((item) => (
+          <article className="card" key={item.uri}>
             <div className="card-top">
               <span className="card-bullet">|</span>
-              <h3 className="card-title">{card.title}</h3>
+              <h3 className="card-title">{item.nombre || "Sin nombre"}</h3>
             </div>
-            <ul className="disease-list">
-              {card.diseases.map((d) => (
-                <li key={d} className="disease-item">{d}</li>
-              ))}
-            </ul>
+
+            {item.especie && (
+              <p className="disease-item">
+                <strong>Especie afectada:</strong> {item.especie}
+              </p>
+            )}
+
+            {item.categoria && (
+              <p className="disease-item">
+                <strong>Categoría:</strong> {item.categoria}
+              </p>
+            )}
+
+            {item.sintomas && item.sintomas.length > 0 && (
+              <ul className="disease-list">
+                {item.sintomas.map((s) => (
+                  <li key={s} className="disease-item">
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
           </article>
         ))}
       </div>

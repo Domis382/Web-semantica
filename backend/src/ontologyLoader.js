@@ -90,12 +90,28 @@ function searchConcepts(rawQuery) {
         nombre: enf.nombre,
         especie: enf.especie,
         categoria: enf.categoria,
-        sintomas: enf.sintomas.map((uri) => sintomas.get(uri) || uri)
+
+        // 🔴 AQUÍ ESTÁ LA MAGIA PARA QUE NO SALGA LA URL
+        sintomas: enf.sintomas.map((uri) => {
+          const nombreSintoma = sintomas.get(uri);
+          if (nombreSintoma) return nombreSintoma;
+
+          // Fallback: limpiar la URI y convertirla en texto legible
+          const lastPart = uri.split("/").pop() || "";
+          const clean = lastPart
+            .replace(/_/g, " ")     // "_" -> espacio
+            .replace(/Sintoma/i, "") // quitar la palabra "Sintoma"
+            .trim();
+
+          // si por alguna razón queda vacío, devolvemos algo genérico
+          return clean || "Síntoma sin nombre";
+        }),
       });
     }
   }
 
   return results;
 }
+
 
 module.exports = { loadOntology, searchConcepts };

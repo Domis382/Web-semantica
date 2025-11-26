@@ -1,12 +1,28 @@
 import React, { useState } from "react";
-import { buscarOntologia } from "../api";
+import { buscarOntologia, buscarDBpedia } from "../api";
 import "./Barrabusqueda.css";
+
+// Función para tokenizar búsqueda (elimina stopwords)
+function tokenizarBusqueda(termino) {
+  const stopwords = new Set([
+    "de", "del", "con", "sin", "para", "por", "y", "o", "u",
+    "el", "la", "los", "las", "un", "una", "unos", "unas",
+    "al", "a", "en", "sobre", "bajo", "entre", "desde", "hasta",
+    "que", "como", "muy", "mas", "pero", "si", "no"
+  ]);
+  
+  return termino
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(word => word.length >= 2 && !stopwords.has(word));
+}
 
 export default function BarraBusqueda() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("todos"); // "todos", "local", "dbpedia"
 
   async function handleSearch() {
     const q = query.trim();
@@ -19,11 +35,38 @@ export default function BarraBusqueda() {
     try {
       setLoading(true);
       setError("");
-      const data = await buscarOntologia(q);
-      setResults(data.results || []);
+      
+      // Tokenizar la búsqueda
+      const tokens = tokenizarBusqueda(q);
+      
+      // Buscar en ontología local
+      const dataLocal = await buscarOntologia(q);
+      const localResults = (dataLocal.results || []).map(item => ({
+        ...item,
+        fuente: "local"
+      }));
+      
+      // Buscar en DBpedia (con tokens)
+      let dbpediaResults = [];
+      try {
+        const dataDBpedia = await buscarDBpedia(q, tokens);
+        dbpediaResults = (dataDBpedia.results || []).map(item => ({
+          ...item,
+          fuente: "dbpedia"
+        }));
+      } catch (dbErr) {
+        console.warn("DBpedia no disponible:", dbErr);
+      }
+      
+      // Combinar resultados: locales primero, luego DBpedia
+      setResults([...localResults, ...dbpediaResults]);
+      
+      if (localResults.length === 0 && dbpediaResults.length === 0) {
+        setError(`No se encontraron resultados para "${q}"`);
+      }
     } catch (err) {
       console.error(err);
-      setError("No se pudo consultar la ontología");
+      setError("Error al consultar la ontología");
     } finally {
       setLoading(false);
     }
@@ -33,14 +76,24 @@ export default function BarraBusqueda() {
     setQuery("");
     setResults([]);
     setError("");
+    setActiveTab("todos");
   }
+
+  // Filtrar resultados por fuente
+  const localResults = results.filter(r => r.fuente === "local");
+  const dbpediaResults = results.filter(r => r.fuente === "dbpedia");
+  
+  const filteredResults = 
+    activeTab === "todos" ? results :
+    activeTab === "local" ? localResults :
+    dbpediaResults;
 
   return (
     <section className="vet-container">
       <header className="vet-header">
-        <h1 className="vet-title">Veterinaria</h1>
+        <h1 className="vet-title">🔬 Veterinaria</h1>
         <p className="vet-desc">
-          Buscador conectado a la ontología Veterinaria.rdf
+          Buscador semántico - Ontología local + DBpedia
         </p>
       </header>
 
@@ -51,7 +104,7 @@ export default function BarraBusqueda() {
             className="vet-search-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar enfermedades, especies..."
+            placeholder="Buscar enfermedades, especies, tratamientos..."
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSearch();
             }}
@@ -77,42 +130,125 @@ export default function BarraBusqueda() {
       </div>
 
       {/* Estado de carga / error */}
-      {loading && <p className="vet-status">Buscando en la ontología…</p>}
-      {error && <p className="vet-status vet-error">{error}</p>}
+      {loading && <p className="vet-status">🔍 Buscando en la ontología y DBpedia…</p>}
+      {error && <p className="vet-status vet-error">⚠️ {error}</p>}
+
+      {/* Filtros por fuente */}
+      {results.length > 0 && (
+        <div className="tabs-container">
+          <button
+            className={`tab-btn ${activeTab === "todos" ? "active" : ""}`}
+            onClick={() => setActiveTab("todos")}
+          >
+            Todos ({results.length})
+          </button>
+          <button
+            className={`tab-btn ${activeTab === "local" ? "active" : ""}`}
+            onClick={() => setActiveTab("local")}
+          >
+            Local ({localResults.length})
+          </button>
+          <button
+            className={`tab-btn ${activeTab === "dbpedia" ? "active" : ""}`}
+            onClick={() => setActiveTab("dbpedia")}
+          >
+            DBpedia ({dbpediaResults.length})
+          </button>
+        </div>
+      )}
 
       {/* Resultados */}
       <div className="cards-grid">
-        {results.map((item) => (
-          <article className="card" key={item.uri}>
+        {filteredResults.map((item, idx) => (
+          <article 
+            className={`card ${item.fuente === "dbpedia" ? "card-dbpedia" : "card-local"}`}
+            key={`${item.fuente}-${item.uri || idx}`}
+          >
             <div className="card-top">
               <span className="card-bullet">|</span>
               <h3 className="card-title">{item.nombre || "Sin nombre"}</h3>
+              <span className={`source-badge source-${item.fuente}`}>
+                {item.fuente === "local" ? "LOCAL" : "DBPEDIA"}
+              </span>
             </div>
 
-            {item.especie && (
-              <p className="disease-item">
-                <strong>Especie afectada:</strong> {item.especie}
-              </p>
+            {/* Resultados locales */}
+            {item.fuente === "local" && (
+              <>
+                {item.especie && (
+                  <p className="disease-item">
+                    <strong>Especie afectada:</strong> {item.especie}
+                  </p>
+                )}
+
+                {item.categoria && (
+                  <p className="disease-item">
+                    <strong>Categoría:</strong> {item.categoria}
+                  </p>
+                )}
+
+                {item.sintomas && item.sintomas.length > 0 && (
+                  <ul className="disease-list">
+                    {item.sintomas.map((s) => (
+                      <li key={s} className="disease-item">
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
 
-            {item.categoria && (
-              <p className="disease-item">
-                <strong>Categoría:</strong> {item.categoria}
-              </p>
-            )}
+            {/* Resultados DBpedia */}
+            {item.fuente === "dbpedia" && (
+              <>
+                {item.thumbnail && (
+                  <div className="thumbnail-container">
+                    <img 
+                      src={item.thumbnail} 
+                      alt={item.nombre}
+                      onError={(e) => e.target.style.display = "none"}
+                    />
+                  </div>
+                )}
+                
+                {item.descripcion && (
+                  <p className="disease-item">
+                    <strong>Descripción:</strong> {item.descripcion}
+                  </p>
+                )}
 
-            {item.sintomas && item.sintomas.length > 0 && (
-              <ul className="disease-list">
-                {item.sintomas.map((s) => (
-                  <li key={s} className="disease-item">
-                    {s}
-                  </li>
-                ))}
-              </ul>
+                {item.atributos && Object.keys(item.atributos).length > 0 && (
+                  <div className="attributes">
+                    {Object.entries(item.atributos).map(([key, value]) => (
+                      <p key={key} className="disease-item">
+                        <strong>{key}:</strong> {Array.isArray(value) ? value.join(", ") : value}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {item.dbpedia_uri && (
+                  <a 
+                    href={item.dbpedia_uri} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="dbpedia-link"
+                  >
+                    Ver en DBpedia →
+                  </a>
+                )}
+              </>
             )}
           </article>
         ))}
       </div>
+
+      {results.length === 0 && !loading && !error && (
+        <div className="no-results">
+          <p>📝 Escribe un término para comenzar la búsqueda</p>
+        </div>
+      )}
     </section>
   );
 }

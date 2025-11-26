@@ -24,6 +24,34 @@ export default function BarraBusqueda() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("todos"); // "todos", "local", "dbpedia"
 
+  // Mapas para forzar búsquedas por especie
+  const speciesMap = {
+    canino: { local: 'Perro', db: 'dog' },
+    caninos: { local: 'Perro', db: 'dog' },
+    perro: { local: 'Perro', db: 'dog' },
+    perros: { local: 'Perro', db: 'dog' },
+    felino: { local: 'Gato', db: 'cat' },
+    felinos: { local: 'Gato', db: 'cat' },
+    gato: { local: 'Gato', db: 'cat' },
+    gatos: { local: 'Gato', db: 'cat' },
+    ave: { local: 'Aves', db: 'bird' },
+    aves: { local: 'Aves', db: 'bird' },
+    caballo: { local: 'Caballo', db: 'horse' },
+    caballos: { local: 'Caballo', db: 'horse' },
+    vaca: { local: 'Vaca', db: 'cow' },
+    vacas: { local: 'Vaca', db: 'cattle' },
+    cerdo: { local: 'Cerdo', db: 'pig' },
+    cerdos: { local: 'Cerdo', db: 'pig' }
+  };
+
+  function detectSpecies(term) {
+    const words = term.toLowerCase().split(/\s+/);
+    for (const w of words) {
+      if (speciesMap[w]) return speciesMap[w];
+    }
+    return null;
+  }
+
   async function handleSearch() {
     const q = query.trim();
     if (!q) {
@@ -35,12 +63,22 @@ export default function BarraBusqueda() {
     try {
       setLoading(true);
       setError("");
-      
+      // Detectar si la búsqueda menciona una especie (caninos, felinos, aves, etc.)
+      const species = detectSpecies(q);
+
       // Tokenizar la búsqueda
       const tokens = tokenizarBusqueda(q);
-      
-      // Buscar en ontología local
-      const dataLocal = await buscarOntologia(q);
+
+      // Si detectamos especie, forzamos la búsqueda local por la especie y
+      // enriquecemos tokens para DBpedia (p.ej. dog + disease)
+      let dataLocal;
+      if (species) {
+        // Buscar localmente usando el nombre local (p.ej. 'Perro')
+        dataLocal = await buscarOntologia(species.local);
+      } else {
+        // Buscar en ontología local con la consulta original
+        dataLocal = await buscarOntologia(q);
+      }
       const localResults = (dataLocal.results || []).map(item => ({
         ...item,
         fuente: "local"
@@ -49,7 +87,15 @@ export default function BarraBusqueda() {
       // Buscar en DBpedia (con tokens)
       let dbpediaResults = [];
       try {
-        const dataDBpedia = await buscarDBpedia(q, tokens);
+        // Preparar tokens DBpedia: si detectamos especie, añadir token de especie,
+        // 'veterinary' y 'disease' para reforzar contexto veterinario
+        let dbTokens = tokens.slice();
+        if (species) {
+          // poner token de especie en inglés al inicio y añadir 'veterinary' y 'disease'
+          const extras = [species.db, 'veterinary', 'disease'];
+          dbTokens = [...extras, ...dbTokens.filter(t => !extras.includes(t))];
+        }
+        const dataDBpedia = await buscarDBpedia(q, dbTokens);
         dbpediaResults = (dataDBpedia.results || []).map(item => ({
           ...item,
           fuente: "dbpedia"
@@ -213,7 +259,7 @@ export default function BarraBusqueda() {
                 )}
                 
                 {item.descripcion && (
-                  <p className="disease-item">
+                  <p className="db-description disease-item">
                     <strong>Descripción:</strong> {item.descripcion}
                   </p>
                 )}

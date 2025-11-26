@@ -48,15 +48,21 @@ async function searchDBpedia(query, tokens = []) {
   const termTranslations = {
     "perro": "dog", "perros": "dog",
     "gato": "cat", "gatos": "cat",
+    "caballo": "horse", "caballos": "horse",
+    "vaca": "cow", "vacas": "cattle",
+    "cerdo": "pig", "cerdos": "pig",
     "vacuna": "vaccine", "vacunas": "vaccine",
     "rabia": "rabies",
     "parvovirus": "parvovirus",
-    "enfermedad": "disease", "afección": "disease",
+    "moquillo": "distemper",
+    "enfermedad": "disease", "afección": "disease", "enfermedades": "disease",
     "cirugía": "surgery",
     "esterilización": "spay",
     "ovario": "ovary",
     "pulga": "flea",
-    "garrapata": "tick"
+    "garrapata": "tick",
+    "veterinaria": "veterinary", "veterinario": "veterinary",
+    "tratamiento": "treatment"
   };
   
   // Traducir tokens
@@ -67,19 +73,46 @@ async function searchDBpedia(query, tokens = []) {
     .map(token => `CONTAINS(LCASE(?label), LCASE("${token}"))`)
     .join(" || ");
   
-  // Consulta SPARQL
+  // Consulta SPARQL mejorada: priorizar tipos veterinarios y abstracts con contexto veterinario;
+  // además ampliar exclusiones de personas/actores/deportistas
   const sparqlQuery = `
     PREFIX dbo: <http://dbpedia.org/ontology/>
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+    PREFIX schema: <http://schema.org/>
 
-    SELECT DISTINCT ?item ?label ?thumbnail
+    SELECT DISTINCT ?item ?label ?thumbnail ?abstract
     WHERE {
       ?item rdfs:label ?label .
-      ?item a ?type .
+      OPTIONAL { ?item a ?type . }
+
+      OPTIONAL { ?item dbo:abstract ?abstract . FILTER(LANG(?abstract) = "en") }
 
       FILTER(LANG(?label) = "en")
       FILTER(${filterConditions || `CONTAINS(LCASE(?label), LCASE("${query}"))`})
-      FILTER(?type IN (dbo:Animal, dbo:Disease))
+
+      # Requerir que el recurso sea de un tipo veterinario conocido
+      # o que su abstract contenga palabras clave veterinarias (disease, veterinary, symptom)
+      FILTER(
+        (bound(?type) && ?type IN (
+          dbo:Animal, dbo:Mammal, dbo:Bird, dbo:Fish,
+          dbo:Disease, dbo:Infection, dbo:MedicalCondition,
+          dbo:Virus, dbo:Bacteria,
+          dbo:Drug, dbo:AnatomicalStructure
+        ))
+        || (
+          bound(?abstract) && (
+            CONTAINS(LCASE(?abstract), "disease") ||
+            CONTAINS(LCASE(?abstract), "veterinary") ||
+            CONTAINS(LCASE(?abstract), "symptom") ||
+            CONTAINS(LCASE(?abstract), "vaccine")
+          )
+        )
+      )
+
+      # Excluir personas y agentes humanos explícitos
+      FILTER(!(?type IN (dbo:Person, foaf:Person, schema:Person, dbo:Agent)))
+      FILTER(!REGEX(STR(?item), "[Pp]erson|[Pp]layer|[Aa]ctor|[Ss]portsperson|[Pp]olitician|[Mm]usician"))
 
       OPTIONAL { ?item dbo:thumbnail ?thumbnail . }
     }
@@ -152,15 +185,22 @@ async function searchDBpedia(query, tokens = []) {
         console.warn("No se pudo obtener descripción para", uri);
       }
       
-      results.push({
-        uri,
-        nombre: label,
-        descripcion,
-        thumbnail,
-        atributos: {
-          "dbpedia_uri": uri
-        }
-      });
+      // Filtrado adicional: excluir resultados que contengan palabras clave no veterinarias
+      const excludeKeywords = ['athlete', 'player', 'actor', 'politician', 'author', 'actress', 'sportsperson', 'musician', 'director'];
+      const isExcluded = excludeKeywords.some(kw => label.toLowerCase().includes(kw));
+
+      if (!isExcluded) {
+        // No incluir la URI completa dentro de `atributos` para evitar que se muestre
+        // en bruto en la UI; la URI se expone en `dbpedia_uri` y/o `uri`.
+        results.push({
+          uri,
+          dbpedia_uri: uri,
+          nombre: label,
+          descripcion,
+          thumbnail,
+          atributos: {}
+        });
+      }
     }
     
   } catch (err) {

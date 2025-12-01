@@ -3,6 +3,18 @@ const express = require("express");
 const cors = require("cors");
 const { loadOntology, searchConcepts } = require("./ontologyLoader");
 
+// *** NUEVO: para manejar archivos y rutas (caché DBpedia)
+const fs = require("fs");
+const path = require("path");
+
+// *** NUEVO: carpeta donde se guardará la caché de DBpedia
+const CACHE_DIR = path.join(__dirname, "../data/cache");
+
+// *** NUEVO: crear carpeta si no existe
+if (!fs.existsSync(CACHE_DIR)) {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+}
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -50,14 +62,14 @@ app.get("/api/search-dbpedia", async (req, res) => {
 });
 
 // ===========================================================
-//   🔍 FUNCIÓN searchDBpedia()  — CON TODOS LOS COMENTARIOS
+//   FUNCIÓN searchDBpedia()  — CON TODOS LOS COMENTARIOS
 // ===========================================================
 
 async function searchDBpedia(query, tokens = []) {
   const DBPEDIA_ENDPOINT = "https://dbpedia.org/sparql";
 
   // ---------------------------------------------------------
-  // 🆕 Mapeo ES → EN
+  //  Mapeo ES → EN
   // Ayuda a traducir palabras veterinarias al inglés
   // ---------------------------------------------------------
   const termTranslations = {
@@ -96,7 +108,7 @@ async function searchDBpedia(query, tokens = []) {
     veterinaria: "veterinary",
     veterinario: "veterinary",
 
-    // 🆕 NUEVO — para búsquedas como "doctor"
+    //  NUEVO — para búsquedas como "doctor"
     doctor: "veterinarian",
     doctores: "veterinarian",
     medico: "veterinarian",
@@ -104,6 +116,9 @@ async function searchDBpedia(query, tokens = []) {
   };
 
   const qNorm = query.toLowerCase().trim();
+
+  // *** NUEVO: ruta del archivo de caché para este término normalizado
+  const cacheFile = path.join(CACHE_DIR, `${qNorm}.json`);
 
   // Traducción de tokens
   let searchTokens = tokens.map(
@@ -117,7 +132,7 @@ async function searchDBpedia(query, tokens = []) {
   }
 
   // ---------------------------------------------------------
-  // 🔍 Filtro SPARQL para buscar en labels y abstracts
+  //  Filtro SPARQL para buscar en labels y abstracts
   // ---------------------------------------------------------
   const filterConditions = searchTokens
     .map(
@@ -149,10 +164,10 @@ async function searchDBpedia(query, tokens = []) {
   const results = [];
 
   // ---------------------------------------------------------
-  // 🧠 FILTROS VETERINARIOS (POST-PROCESAMIENTO EN JS)
+  //  FILTROS VETERINARIOS (POST-PROCESAMIENTO EN JS)
   // ---------------------------------------------------------
 
-  // 1️⃣ Palabras que DEMUESTRAN que el contenido es veterinario
+  // 1️ Palabras que DEMUESTRAN que el contenido es veterinario
   const vetWordBoundaryTerms = [
     "dog",
     "cat",
@@ -180,7 +195,7 @@ async function searchDBpedia(query, tokens = []) {
     "parvovirus",
   ];
 
-  // 2️⃣ Palabras PROHIBIDAS para filtrar basura:
+  // 2️ Palabras PROHIBIDAS para filtrar basura:
   //    (personas, políticos, jugadores, actores, música, TV…)
   const forbiddenPatterns = [
     /politician/i,
@@ -214,7 +229,9 @@ async function searchDBpedia(query, tokens = []) {
   ];
 
   try {
-    // Ejecutar consulta SPARQL
+    // ======================================================
+    //   CASO NORMAL: hay internet → consultamos DBpedia
+    // ======================================================
     const response = await fetch(DBPEDIA_ENDPOINT, {
       method: "POST",
       headers: {
@@ -223,6 +240,10 @@ async function searchDBpedia(query, tokens = []) {
       },
       body: `query=${encodeURIComponent(sparqlQuery)}`,
     });
+
+    if (!response.ok) {
+      throw new Error(`DBpedia devolvió estado ${response.status}`);
+    }
 
     const data = await response.json();
     const bindings = data.results?.bindings || [];
@@ -235,10 +256,10 @@ async function searchDBpedia(query, tokens = []) {
 
       const text = (label + " " + descripcion).toLowerCase();
 
-      // ❌ 1️⃣ Si contiene palabras prohibidas → se descarta
+      // 1️ Si contiene palabras prohibidas → se descarta
       if (forbiddenPatterns.some((p) => p.test(text))) continue;
 
-      // ❌ 2️⃣ Si NO contiene nada veterinario → se descarta
+      // 2️ Si NO contiene nada veterinario → se descarta
       const hasBoundary = vetWordBoundaryTerms.some((w) =>
         new RegExp(`\\b${w}\\b`).test(text)
       );
@@ -256,11 +277,37 @@ async function searchDBpedia(query, tokens = []) {
         atributos: {},
       });
     }
-  } catch (err) {
-    console.error("Error consultando DBpedia:", err);
-  }
 
-  return results;
+    // *** NUEVO: guardar en caché SOLO cuando la consulta fue exitosa
+    try {
+      const top3 = results.slice(0, 3); // máximo 3 resultados
+      fs.writeFileSync(cacheFile, JSON.stringify(top3, null, 2), "utf-8");
+      console.log("💾 Caché DBpedia guardado para:", qNorm);
+    } catch (e) {
+      console.error("Error guardando caché DBpedia:", e);
+    }
+
+    // *** CAMBIO: con internet devolvemos TODOS los resultados filtrados
+    return results;
+  } catch (err) {
+    // ======================================================
+    //   CASO SIN INTERNET / ERROR: usar la caché si existe
+    // ======================================================
+    console.error("Error consultando DBpedia:", err);
+
+    if (fs.existsSync(cacheFile)) {
+      try {
+        console.log("📦 Usando caché DBpedia (sin internet) para:", qNorm);
+        const cached = JSON.parse(fs.readFileSync(cacheFile, "utf-8"));
+        return cached; // aquí normalmente vienen esos 3 resultados guardados
+      } catch (e) {
+        console.error("Error leyendo caché DBpedia:", e);
+      }
+    }
+
+    // Si tampoco hay caché, devolvemos lista vacía
+    return [];
+  }
 }
 
 // Iniciar servidor

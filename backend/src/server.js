@@ -9,18 +9,18 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// Cargar la ontología al arrancar
+// Cargar la ontología
 loadOntology();
 
 /**
- * Healthcheck simple para probar conexión desde el frontend
+ * Healthcheck
  */
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "API Web Semántica funcionando ✅" });
 });
 
 /**
- * Búsqueda local sobre la ontología veterinaria
+ * Búsqueda LOCAL
  */
 app.get("/api/search", (req, res) => {
   const q = req.query.q || "";
@@ -35,33 +35,31 @@ app.get("/api/search-dbpedia", async (req, res) => {
   const q = req.query.q || "";
   const tokens = (req.query.tokens || "")
     .split(",")
-    .map(t => t.trim())
+    .map((t) => t.trim())
     .filter(Boolean);
 
-  if (!q) {
-    return res.json({ query: q, count: 0, results: [] });
-  }
+  if (!q) return res.json({ query: q, count: 0, results: [] });
 
   try {
     const results = await searchDBpedia(q, tokens);
     res.json({ query: q, count: results.length, results });
   } catch (err) {
     console.error("Error en DBpedia:", err);
-    res.status(500).json({
-      error: "Error al consultar DBpedia",
-      details: err.message,
-    });
+    res.status(500).json({ error: "Error consultando DBpedia" });
   }
 });
 
-// ==========================
-//  FUNCIÓN searchDBpedia()
-// ==========================
+// ===========================================================
+//   🔍 FUNCIÓN searchDBpedia()  — CON TODOS LOS COMENTARIOS
+// ===========================================================
 
 async function searchDBpedia(query, tokens = []) {
   const DBPEDIA_ENDPOINT = "https://dbpedia.org/sparql";
 
-  // Traducciones útiles ES -> EN para armar mejor la búsqueda
+  // ---------------------------------------------------------
+  // 🆕 Mapeo ES → EN
+  // Ayuda a traducir palabras veterinarias al inglés
+  // ---------------------------------------------------------
   const termTranslations = {
     perro: "dog",
     perros: "dog",
@@ -88,53 +86,49 @@ async function searchDBpedia(query, tokens = []) {
     enfermedad: "disease",
     enfermedades: "disease",
     afección: "disease",
+    afeccion: "disease",
+    cirugia: "surgery",
     cirugía: "surgery",
-    esterilización: "spay",
-    ovario: "ovary",
-    pulga: "flea",
-    garrapata: "tick",
+    tratamiento: "treatment",
+    parasito: "parasite",
+    parásito: "parasite",
+
     veterinaria: "veterinary",
     veterinario: "veterinary",
-    tratamiento: "treatment",
+
+    // 🆕 NUEVO — para búsquedas como "doctor"
+    doctor: "veterinarian",
+    doctores: "veterinarian",
+    medico: "veterinarian",
+    médico: "veterinarian",
   };
 
-  // Palabras que indican que el usuario está buscando una ESPECIE
-  const speciesTerms = [
-    "perro",
-    "perros",
-    "canino",
-    "caninos",
-    "gato",
-    "gatos",
-    "felino",
-    "felinos",
-    "vaca",
-    "vacas",
-    "caballo",
-    "caballos",
-    "cerdo",
-    "cerdos",
-    "oveja",
-    "ovejas",
-  ];
-
   const qNorm = query.toLowerCase().trim();
-  const isSpeciesQuery = speciesTerms.includes(qNorm);
 
-  // Tokens traducidos a EN
-  const searchTokens = tokens.map((t) => termTranslations[t.toLowerCase()] || t);
+  // Traducción de tokens
+  let searchTokens = tokens.map(
+    (t) => termTranslations[t.toLowerCase()] || t.toLowerCase()
+  );
 
-  // Si no hay tokens, usamos el query traducido
+  // Si no enviaron tokens, usar la expresión principal
   if (searchTokens.length === 0) {
-    const translated = termTranslations[qNorm] || query;
-    searchTokens.push(translated);
+    const translated = termTranslations[qNorm] || qNorm;
+    searchTokens = [translated];
   }
 
-  // Filtro básico en SPARQL: label contiene alguno de los tokens
+  // ---------------------------------------------------------
+  // 🔍 Filtro SPARQL para buscar en labels y abstracts
+  // ---------------------------------------------------------
   const filterConditions = searchTokens
-    .map((token) => `CONTAINS(LCASE(?label), LCASE("${token}"))`)
+    .map(
+      (token) => `
+        CONTAINS(LCASE(STR(?label)),    LCASE("${token}")) ||
+        CONTAINS(LCASE(STR(?abstract)), LCASE("${token}"))
+      `
+    )
     .join(" || ");
 
+  // Consulta SPARQL
   const sparqlQuery = `
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
     PREFIX dbo:  <http://dbpedia.org/ontology/>
@@ -144,17 +138,83 @@ async function searchDBpedia(query, tokens = []) {
       ?item rdfs:label ?label .
       FILTER(LANG(?label) = "en")
 
+      OPTIONAL { ?item dbo:abstract ?abstract . FILTER(LANG(?abstract)="en") }
       OPTIONAL { ?item dbo:thumbnail ?thumbnail . }
-      OPTIONAL { ?item dbo:abstract  ?abstract  . FILTER(LANG(?abstract) = "en") }
 
-      FILTER(${filterConditions})
+      FILTER( ${filterConditions} )
     }
-    LIMIT 40
+    LIMIT 80
   `;
 
   const results = [];
 
+  // ---------------------------------------------------------
+  // 🧠 FILTROS VETERINARIOS (POST-PROCESAMIENTO EN JS)
+  // ---------------------------------------------------------
+
+  // 1️⃣ Palabras que DEMUESTRAN que el contenido es veterinario
+  const vetWordBoundaryTerms = [
+    "dog",
+    "cat",
+    "canine",
+    "feline",
+    "animal",
+    "breed",
+  ];
+
+  const vetSubstringTerms = [
+    "disease",
+    "infection",
+    "virus",
+    "bacteria",
+    "parasite",
+    "vaccine",
+    "vaccination",
+    "pathogen",
+    "syndrome",
+    "condition",
+    "veterinary",
+    "veterinarian",
+    "rabies",
+    "distemper",
+    "parvovirus",
+  ];
+
+  // 2️⃣ Palabras PROHIBIDAS para filtrar basura:
+  //    (personas, políticos, jugadores, actores, música, TV…)
+  const forbiddenPatterns = [
+    /politician/i,
+    /footballer/i,
+    /basketball/i,
+    /wrestler/i,
+    /boxer/i,
+    /player/i,
+    /club/i,
+    /team/i,
+    /singer/i,
+    /musician/i,
+    /band/i,
+    /album/i,
+    /song/i,
+    /actor/i,
+    /actress/i,
+    /film/i,
+    /movie/i,
+    /television/i,
+    /tv series/i,
+    /episode/i,
+    /character/i,
+    /cartoon/i,
+    /comic/i,
+    /poet/i,
+    /writer/i,
+    /lawyer/i,
+    /president/i,
+    /minister/i,
+  ];
+
   try {
+    // Ejecutar consulta SPARQL
     const response = await fetch(DBPEDIA_ENDPOINT, {
       method: "POST",
       headers: {
@@ -164,140 +224,38 @@ async function searchDBpedia(query, tokens = []) {
       body: `query=${encodeURIComponent(sparqlQuery)}`,
     });
 
-    if (!response.ok) {
-      throw new Error(`DBpedia returned ${response.status}`);
-    }
-
     const data = await response.json();
     const bindings = data.results?.bindings || [];
-
-    // ---------------------------
-    //  POST-FILTRADO EN JS
-    // ---------------------------
-
-    // 1) Patrones para excluir personas/cosas que no queremos
-    const forbiddenPatterns = [
-      
-      // Profesiones humanas
-      /politician/i,
-      /footballer/i,
-      /basketball/i,
-      /actress?/i,
-      /actor/i,
-      /singer/i,
-      /musician/i,
-      /writer/i,
-      /novelist/i,
-      /poet/i,
-
-      // Entretenimiento: películas, shows, música
-      /film/i,
-      /movie/i,
-      /album/i,
-      /song/i,
-      /band/i,
-      /player/i,
-      /club/i,
-      /team/i,
-
-      // Ficción, TV, animación, episodios, series
-      /television/i,
-      /tv series/i,
-      /\bseries\b/i,
-      /episode/i,
-      /animated/i,
-      /animation/i,
-      /fictional/i,
-      /fiction/i,
-      /character/i,
-      /cartoon/i,
-      /show/i,
-      /network/i,
-      /nickelodeon/i,
-      /toon/i,
-      /season/i,
-      /cast/i,
-      /voice actor/i
-    ];
-
-    // 2) Palabras que sí o sí queremos en enfermedades/temas médicos
-    const mustContain = [
-      "dog",
-      "canine",
-      "animal",
-      "mammal",
-      "disease",
-      "infection",
-      "virus",
-      "bacteria",
-      "vaccine",
-      "breed",
-      "symptom",
-      "veterinary",
-      "parasite",
-      "pathogen",
-      "syndrome",
-      "condition",
-      "treatment",
-      "therapy",
-    ];
-
-    // 3) Palabras permitidas cuando la intención es ESPECIE
-    const allowedForSpecies = ["dog", "canine", "animal", "breed"];
 
     for (const binding of bindings) {
       const uri = binding.item?.value;
       const label = binding.label?.value || uri?.split("/").pop() || "";
       const thumbnail = binding.thumbnail?.value;
-      let descripcion =
-        binding.abstract?.value || "Descripción no disponible";
+      let descripcion = binding.abstract?.value || "Descripción no disponible";
 
-      if (descripcion.length > 400) {
-        descripcion = descripcion.substring(0, 397) + "...";
-      }
+      const text = (label + " " + descripcion).toLowerCase();
 
-      const labelLower = label.toLowerCase();
-      const descLower = descripcion.toLowerCase();
+      // ❌ 1️⃣ Si contiene palabras prohibidas → se descarta
+      if (forbiddenPatterns.some((p) => p.test(text))) continue;
 
-      // a) Excluir por patrones claros de personas/música/deportes
-      const matchesForbiddenPattern = forbiddenPatterns.some(
-        (pat) => pat.test(labelLower) || pat.test(descLower)
+      // ❌ 2️⃣ Si NO contiene nada veterinario → se descarta
+      const hasBoundary = vetWordBoundaryTerms.some((w) =>
+        new RegExp(`\\b${w}\\b`).test(text)
       );
-      if (matchesForbiddenPattern) continue;
+      const hasSubstring = vetSubstringTerms.some((w) => text.includes(w));
 
-      if (isSpeciesQuery) {
-        // -------------------------
-        //  MODO ESPECIE (perro/gato)
-        // -------------------------
-        const isAllowedForSpecies = allowedForSpecies.some(
-          (w) =>
-            new RegExp(`\\b${w}\\b`, "i").test(labelLower) ||
-            new RegExp(`\\b${w}\\b`, "i").test(descLower)
-        );
+      if (!(hasBoundary || hasSubstring)) continue;
 
-        if (!isAllowedForSpecies) continue;
-      } else {
-        // -------------------------
-        //  MODO ENFERMEDAD / MÉDICO
-        // -------------------------
-        const containsVetContext = mustContain.some(
-          (w) => labelLower.includes(w) || descLower.includes(w)
-        );
-        if (!containsVetContext) continue;
-      }
-
-      // Si pasa todos los filtros, lo agregamos
+      // ✔ Si llegó aquí → es veterinario
       results.push({
         uri,
         dbpedia_uri: uri,
         nombre: label,
         descripcion,
         thumbnail,
-        atributos: {}, // para no mostrar la URI en bruto en la UI
+        atributos: {},
       });
     }
-
-    console.log("🐶 DBpedia RESULTS:", results.map((r) => r.nombre));
   } catch (err) {
     console.error("Error consultando DBpedia:", err);
   }
@@ -305,8 +263,7 @@ async function searchDBpedia(query, tokens = []) {
   return results;
 }
 
-// ==========================
-
-app.listen(PORT, () => {
-  console.log(`🚀 Backend escuchando en http://localhost:${PORT}`);
-});
+// Iniciar servidor
+app.listen(PORT, () =>
+  console.log(`🚀 Backend escuchando en http://localhost:${PORT}`)
+);

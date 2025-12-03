@@ -25,9 +25,13 @@ app.get("/api/health", (req, res) => {
 app.get("/api/search", (req, res) => {
   const q = req.query.q || "";
   const results = searchConcepts(q);
-  res.json({ query: q, count: results.length, results });
-});
 
+  res.json({
+    query: q,
+    count: results.length,
+    results,
+  });
+});
 /**
  * Búsqueda en DBpedia
  */
@@ -35,7 +39,7 @@ app.get("/api/search-dbpedia", async (req, res) => {
   const q = req.query.q || "";
   const tokens = (req.query.tokens || "")
     .split(",")
-    .map(t => t.trim())
+    .map((t) => t.trim())
     .filter(Boolean);
 
   if (!q) {
@@ -122,7 +126,9 @@ async function searchDBpedia(query, tokens = []) {
   const isSpeciesQuery = speciesTerms.includes(qNorm);
 
   // Tokens traducidos a EN
-  const searchTokens = tokens.map((t) => termTranslations[t.toLowerCase()] || t);
+  const searchTokens = tokens.map(
+    (t) => termTranslations[t.toLowerCase()] || t
+  );
 
   // Si no hay tokens, usamos el query traducido
   if (searchTokens.length === 0) {
@@ -177,7 +183,6 @@ async function searchDBpedia(query, tokens = []) {
 
     // 1) Patrones para excluir personas/cosas que no queremos
     const forbiddenPatterns = [
-      
       // Profesiones humanas
       /politician/i,
       /footballer/i,
@@ -217,7 +222,7 @@ async function searchDBpedia(query, tokens = []) {
       /toon/i,
       /season/i,
       /cast/i,
-      /voice actor/i
+      /voice actor/i,
     ];
 
     // 2) Palabras que sí o sí queremos en enfermedades/temas médicos
@@ -249,8 +254,7 @@ async function searchDBpedia(query, tokens = []) {
       const uri = binding.item?.value;
       const label = binding.label?.value || uri?.split("/").pop() || "";
       const thumbnail = binding.thumbnail?.value;
-      let descripcion =
-        binding.abstract?.value || "Descripción no disponible";
+      let descripcion = binding.abstract?.value || "Descripción no disponible";
 
       if (descripcion.length > 400) {
         descripcion = descripcion.substring(0, 397) + "...";
@@ -297,7 +301,10 @@ async function searchDBpedia(query, tokens = []) {
       });
     }
 
-    console.log("🐶 DBpedia RESULTS:", results.map((r) => r.nombre));
+    console.log(
+      "🐶 DBpedia RESULTS:",
+      results.map((r) => r.nombre)
+    );
   } catch (err) {
     console.error("Error consultando DBpedia:", err);
   }

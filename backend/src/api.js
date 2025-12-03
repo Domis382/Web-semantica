@@ -1,7 +1,8 @@
-const API_URL = "http://localhost:4000/api";
-
-export async function checkHealth() {
-  const res = await fetch(`${API_URL}/health`);
-  if (!res.ok) throw new Error("Error al conectar con el backend");
+export async function buscarDBpedia(q, tokens) {
+  const params = new URLSearchParams({
+    q,
+    tokens: tokens.join(" "),
+  });
+  const res = await fetch(`http://localhost:4000/api/search?${params}`);
   return res.json();
 }

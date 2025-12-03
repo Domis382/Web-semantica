@@ -1,0 +1,26 @@
+[
+  {
+    "uri": "http://dbpedia.org/resource/Arctic_Cat",
+    "dbpedia_uri": "http://dbpedia.org/resource/Arctic_Cat",
+    "nombre": "Arctic Cat",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/Arctic_Cat_logo.png?width=300",
+    "atributos": {}
+  },
+  {
+    "uri": "http://dbpedia.org/resource/Cat's_paw_(knot)",
+    "dbpedia_uri": "http://dbpedia.org/resource/Cat's_paw_(knot)",
+    "nombre": "Cat's paw (knot)",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/catspawknot.png?width=300",
+    "atributos": {}
+  },
+  {
+    "uri": "http://dbpedia.org/resource/Cat-scratch_disease",
+    "dbpedia_uri": "http://dbpedia.org/resource/Cat-scratch_disease",
+    "nombre": "Cat-scratch disease",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/Cat-scratch-disease.jpg?width=300",
+    "atributos": {}
+  }
+]

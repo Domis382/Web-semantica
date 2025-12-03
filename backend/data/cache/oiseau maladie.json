@@ -1,0 +1,25 @@
+[
+  {
+    "uri": "http://dbpedia.org/resource/Cat-scratch_disease",
+    "dbpedia_uri": "http://dbpedia.org/resource/Cat-scratch_disease",
+    "nombre": "Cat-scratch disease",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/Cat-scratch-disease.jpg?width=300",
+    "atributos": {}
+  },
+  {
+    "uri": "http://dbpedia.org/resource/Central_core_disease",
+    "dbpedia_uri": "http://dbpedia.org/resource/Central_core_disease",
+    "nombre": "Central core disease",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/Cell_sample_of_muscle_tissue_with_central_core_disease_(stained_for_contrast).jpg?width=300",
+    "atributos": {}
+  },
+  {
+    "uri": "http://dbpedia.org/resource/Category:Infectious_disease_deaths_in_Oklahoma",
+    "dbpedia_uri": "http://dbpedia.org/resource/Category:Infectious_disease_deaths_in_Oklahoma",
+    "nombre": "Infectious disease deaths in Oklahoma",
+    "descripcion": "Descripción no disponible",
+    "atributos": {}
+  }
+]

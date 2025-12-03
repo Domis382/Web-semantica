@@ -2,13 +2,18 @@ import React, { useState } from "react";
 import { buscarOntologia, buscarDBpedia } from "../api";
 import "./Barrabusqueda.css";
 
-// Función para tokenizar búsqueda (elimina stopwords)
+// Función para tokenizar búsqueda (elimina stopwords español y francés)
 function tokenizarBusqueda(termino) {
   const stopwords = new Set([
+    // español
     "de", "del", "con", "sin", "para", "por", "y", "o", "u",
     "el", "la", "los", "las", "un", "una", "unos", "unas",
     "al", "a", "en", "sobre", "bajo", "entre", "desde", "hasta",
-    "que", "como", "muy", "mas", "pero", "si", "no"
+    "que", "como", "muy", "mas", "pero", "si", "no",
+    // francés
+    "de", "du", "la", "le", "les", "un", "une", "des", "et", "ou",
+    "pour", "par", "avec", "sans", "à", "au", "en", "dans", "sur",
+    "qui", "que", "comme", "très", "mais", "si", "non"
   ]);
   
   return termino
@@ -26,6 +31,7 @@ export default function BarraBusqueda() {
 
   // Mapas para forzar búsquedas por especie
   const speciesMap = {
+    // español
     canino: { local: 'Perro', db: 'dog' },
     caninos: { local: 'Perro', db: 'dog' },
     perro: { local: 'Perro', db: 'dog' },
@@ -41,7 +47,26 @@ export default function BarraBusqueda() {
     vaca: { local: 'Vaca', db: 'cow' },
     vacas: { local: 'Vaca', db: 'cattle' },
     cerdo: { local: 'Cerdo', db: 'pig' },
-    cerdos: { local: 'Cerdo', db: 'pig' }
+    cerdos: { local: 'Cerdo', db: 'pig' },
+    // francés
+    chien: { local: 'Perro', db: 'dog' },
+    chiens: { local: 'Perro', db: 'dog' },
+    canin: { local: 'Perro', db: 'dog' },
+    canins: { local: 'Perro', db: 'dog' },
+    chat: { local: 'Gato', db: 'cat' },
+    chats: { local: 'Gato', db: 'cat' },
+    félin: { local: 'Gato', db: 'cat' },
+    félins: { local: 'Gato', db: 'cat' },
+    oiseau: { local: 'Aves', db: 'bird' },
+    oiseaux: { local: 'Aves', db: 'bird' },
+    cheval: { local: 'Caballo', db: 'horse' },
+    chevaux: { local: 'Caballo', db: 'horse' },
+    vache: { local: 'Vaca', db: 'cattle' },
+    vaches: { local: 'Vaca', db: 'cattle' },
+    cochon: { local: 'Cerdo', db: 'pig' },
+    cochons: { local: 'Cerdo', db: 'pig' },
+    porc: { local: 'Cerdo', db: 'pig' },
+    porcs: { local: 'Cerdo', db: 'pig' }
   };
 
   function detectSpecies(term) {
@@ -250,11 +275,7 @@ export default function BarraBusqueda() {
               <>
                 {item.thumbnail && (
                   <div className="thumbnail-container">
-                    <img 
-                      src={item.thumbnail} 
-                      alt={item.nombre}
-                      onError={(e) => e.target.style.display = "none"}
-                    />
+                    
                   </div>
                 )}
                 

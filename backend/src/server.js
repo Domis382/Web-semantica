@@ -69,10 +69,11 @@ async function searchDBpedia(query, tokens = []) {
   const DBPEDIA_ENDPOINT = "https://dbpedia.org/sparql";
 
   // ---------------------------------------------------------
-  //  Mapeo ES → EN
+  //  Mapeo ES → EN y FR → EN
   // Ayuda a traducir palabras veterinarias al inglés
   // ---------------------------------------------------------
   const termTranslations = {
+    // español
     perro: "dog",
     perros: "dog",
     canino: "dog",
@@ -108,11 +109,52 @@ async function searchDBpedia(query, tokens = []) {
     veterinaria: "veterinary",
     veterinario: "veterinary",
 
-    //  NUEVO — para búsquedas como "doctor"
     doctor: "veterinarian",
     doctores: "veterinarian",
     medico: "veterinarian",
     médico: "veterinarian",
+
+    // francés
+    chien: "dog",
+    chiens: "dog",
+    canin: "dog",
+    canins: "dog",
+    chat: "cat",
+    chats: "cat",
+    félin: "cat",
+    félins: "cat",
+    cheval: "horse",
+    chevaux: "horse",
+    vache: "cattle",
+    vaches: "cattle",
+    vachette: "cattle",
+    cochon: "pig",
+    cochons: "pig",
+    porc: "pig",
+    porcs: "pig",
+    oiseau: "bird",
+    oiseaux: "bird",
+    mouton: "sheep",
+    moutons: "sheep",
+
+    vaccin: "vaccine",
+    vaccins: "vaccine",
+    rage: "rabies",
+    maladie: "disease",
+    maladies: "disease",
+    maladie_infectieuse: "disease",
+    chirurgie: "surgery",
+    traitement: "treatment",
+    parasite: "parasite",
+    parasites: "parasite",
+
+    veterinaire: "veterinary",
+    veterinaires: "veterinary",
+
+    docteur: "veterinarian",
+    docteurs: "veterinarian",
+    medecin: "veterinarian",
+    médecin: "veterinarian"
   };
 
   const qNorm = query.toLowerCase().trim();

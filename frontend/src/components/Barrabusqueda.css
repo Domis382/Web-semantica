@@ -1,3 +1,6 @@
+/* ============================================================
+   CONTENEDOR GENERAL
+   ============================================================ */
 .search-container {
   width: 100%;
   min-height: 90vh;
@@ -6,57 +9,47 @@
   align-items: center;
   flex-direction: column;
   border-radius: 10px;
-  /* neutral background removed (no image) to keep UI professional */
   background: linear-gradient(180deg, #920707 0%, #07a58b 60%);
 }
-.title{
-    color: whitesmoke;
-    font-size: 32px;
-    align-items: center;
-    justify-content: center;
-}
-.search-bar {
-width: 550px;
-background: white;
-padding: 14px 24px;
-border-radius: 40px;
-display: flex;
-align-items: center;
-gap: 18px;
-box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.15);
+
+.title {
+  color: whitesmoke;
+  font-size: 32px;
+  align-items: center;
+  justify-content: center;
 }
 
-.search-icon {
-width: 22px;
-height: 22px;
-color: #b5b5b5;
-}
-.search-icon:hover{
-color: #8e7bff;
+/* ============================================================
+   SEARCH BAR ESTILO ANTIGUO (NO USADO EN NUEVO BUSCADOR)
+   ============================================================ */
+.search-bar {
+  width: 550px;
+  background: white;
+  padding: 14px 24px;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.15);
 }
 
 .search-input {
-flex: 1;
-border: none;
-outline: none;
-font-size: 16px;
-background: transparent;
-color: #555;
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background: transparent;
+  color: #555;
 }
 
 .search-input::placeholder {
-color: #b8b8b8;
+  color: #b8b8b8;
 }
 
-.dots-menu span {
-width: 6px;
-height: 6px;
-background: #8e7bff;
-border-radius: 50%;
-}
-
-/* New styles for Veterinaria static layout */
-.vet-container{
+/* ============================================================
+   NUEVO BUSCADOR VETERINARIA
+   ============================================================ */
+.vet-container {
   width: 100%;
   padding: 56px 20px;
   box-sizing: border-box;
@@ -64,54 +57,62 @@ border-radius: 50%;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
-
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
   min-height: 70vh;
   position: relative;
   z-index: 10;
 }
-.vet-header{
+
+.vet-header {
   max-width: 1100px;
   margin: 0 auto 28px auto;
   text-align: left;
 }
-.vet-title{
+
+/* Nuevo contenedor para título + banderas */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vet-title {
   margin: 0;
   font-size: 44px;
   color: #0f172a;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
-.vet-desc{
+
+.vet-desc {
   margin: 8px 0 0 0;
   color: #475569;
   font-size: 16px;
 }
-.cards-grid{
-  max-width: 1100px;
-  margin: 20px auto 0 auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
-  gap: 18px;
-}
-.vet-search-wrap{
+
+/* ============================================================
+   BARRA DE BÚSQUEDA
+   ============================================================ */
+.vet-search-wrap {
   max-width: 1100px;
   margin: 8px auto 18px auto;
   padding: 0 12px;
 }
-.vet-search-bar{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  background: linear-gradient(90deg,#ffffff,#f8fafc);
-  padding:8px;
+
+.vet-search-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: linear-gradient(90deg, #ffffff, #f8fafc);
+  padding: 8px;
   border-radius: 999px;
-  box-shadow: 0 6px 20px rgba(2,6,23,0.06);
-  border: 1px solid rgba(2,6,23,0.04);
+  box-shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
+  border: 1px solid rgba(2, 6, 23, 0.04);
   width: 100%;
 }
-.vet-search-input{
-  flex:1;
+
+.vet-search-input {
+  flex: 1;
   border: none;
   outline: none;
   padding: 10px 12px;
@@ -119,22 +120,24 @@ border-radius: 50%;
   background: transparent;
   color: #0b1220;
 }
-.vet-search-input::placeholder{ color: #94a3b8 }
-.vet-search-btn{
+
+.vet-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.vet-search-btn {
   background: #06b6d4;
   border: none;
   padding: 8px 12px;
   border-radius: 999px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(6,182,212,0.12);
+  box-shadow: 0 6px 18px rgba(6, 182, 212, 0.12);
 }
-.vet-search-btn svg{ display:block }
-.vet-search-btn:active{ transform: translateY(1px) }
 
-.vet-reset-btn{
+.vet-reset-btn {
   background: transparent;
   color: #0b1220;
   border: none;
@@ -143,91 +146,63 @@ border-radius: 50%;
   cursor: pointer;
   font-size: 14px;
 }
-.vet-reset-btn:hover{ background: rgba(11,18,32,0.04) }
-.card{
+
+.vet-reset-btn:hover {
+  background: rgba(11, 18, 32, 0.04);
+}
+
+/* ============================================================
+   TARJETAS DE RESULTADOS
+   ============================================================ */
+.cards-grid {
+  max-width: 1100px;
+  margin: 20px auto 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.card {
   background: #ffffff;
   border-radius: 12px;
   padding: 18px 16px;
-  box-shadow: 0 8px 24px rgba(16,24,40,0.06);
-  border: 1px solid rgba(15,23,42,0.04);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
 }
-.card-top{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:10px;
-}
-.card-bullet{
-  display:inline-block;
-  color:#0ea5a4;
-  font-weight:700;
-}
-.card-title{
-  margin:0;
-  font-size:20px;
-  color:#0b1220;
-}
-.disease-list{
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0 0;
-  color: #374151;
-}
-.disease-item{
-  padding: 8px 0;
-  border-bottom: 1px dashed rgba(15,23,42,0.04);
-  font-size:14px;
-}
-
-/* Descripciones largas de DBpedia: truncar a 4 líneas y evitar desbordes */
-.db-description{
-  /* Mostrar siempre la descripción completa; permitir que la tarjeta crezca */
-  display: block;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  margin: 6px 0;
-}
-
-/* Forzar que todo texto se ajuste al ancho y la tarjeta crezca según su contenido */
-.card, .card *{
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Estilos para badges de fuente */
-.source-badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-left: 8px;
-}
-
-.source-local {
-  background: #C8E6C9;
-  color: #2E7D32;
-}
-
-.source-dbpedia {
-  background: #BBDEFB;
-  color: #1565C0;
-}
 
 .card-local {
-  border-left: 4px solid #4CAF50;
+  border-left: 4px solid #4caf50;
 }
 
 .card-dbpedia {
-  border-left: 4px solid #2196F3;
+  border-left: 4px solid #2196f3;
 }
 
-/* Estilos para tabs de filtrado */
+.card-title {
+  margin: 0;
+  font-size: 20px;
+  color: #0b1220;
+}
+
+.dbpedia-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: #1565c0;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.dbpedia-link:hover {
+  color: #0d47a1;
+  text-decoration: underline;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
 .tabs-container {
   max-width: 1100px;
   margin: 20px auto;
@@ -259,124 +234,49 @@ border-radius: 50%;
   border-color: #06b6d4;
 }
 
-/* Estilos para resultados de DBpedia */
-.thumbnail-container {
-  width: 100%;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #f5f5f5;
+/* ============================================================
+   BANDERAS REALES (IMÁGENES) 🇪🇸 🇬🇧 🇫🇷
+   ============================================================ */
+.lang-flags {
   display: flex;
-  justify-content: center;
+  gap: 8px;
   align-items: center;
-  min-height: 120px;
 }
 
-.thumbnail-container img {
-  width: 100%;
-  height: auto;
-  max-height: 180px;
+.flag {
+  width: 36px;
+  height: 24px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  cursor: pointer;
   object-fit: cover;
+  transition: transform 0.15s ease, border-color 0.2s ease;
 }
 
-.dbpedia-link {
-  display: inline-block;
-  margin-top: 8px;
-  color: #1565C0;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: color 0.2s ease;
+.flag:hover {
+  transform: scale(1.08);
 }
 
-.dbpedia-link:hover {
-  color: #0d47a1;
-  text-decoration: underline;
-}
-
-.attributes {
-  margin: 8px 0;
-}
-
-.vet-status {
-  max-width: 1100px;
-  margin: 20px auto;
-  padding: 12px 16px;
-  text-align: center;
-  color: #555;
-  font-size: 14px;
-}
-
-.vet-status.vet-error {
-  background: #FFEBEE;
-  color: #C62828;
-  border-radius: 8px;
-  border: 1px solid #EF5350;
-}
-
-.no-results {
-  max-width: 1100px;
-  margin: 40px auto;
-  padding: 40px;
-  text-align: center;
-  color: #999;
-  font-size: 16px;
-}
-
-@media (max-width:640px){
-  .vet-title{font-size:32px}
-  .cards-grid{gap:12px}
-  .vet-container{padding:36px 12px}
-  .tabs-container { margin: 16px auto; }
-  .tab-btn { font-size: 13px; padding: 6px 12px; }
+.flag.active {
+  border-color: #06b6d4;
+  box-shadow: 0 4px 10px rgba(6, 182, 212, 0.35);
 }
 
 /* ============================================================
-   🌍 SELECTOR DE IDIOMA CON BANDERAS (ES / EN / FR)
+   RESPONSIVE
    ============================================================ */
-
-.lang-switcher {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-end;
-  margin-top: 8px;
-}
-
-.lang-btn {
-  width: 45px;
-  height: 45px;
-  font-size: 24px;
-  border-radius: 12px;
-  border: 2px solid transparent;
-  background: #ffffff;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10);
-}
-
-.lang-btn:hover {
-  transform: translateY(-2px);
-  border-color: #06b6d4;
-  box-shadow: 0 6px 14px rgba(6, 182, 212, 0.25);
-}
-
-.lang-btn.active {
-  background: #06b6d4;
-  border-color: #06b6d4;
-  color: white;
-  box-shadow: 0 8px 16px rgba(6, 182, 212, 0.35);
-  transform: translateY(-2px);
-}
-
-/* Responsivo */
 @media (max-width: 640px) {
-  .lang-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 20px;
+  .vet-title {
+    font-size: 32px;
+  }
+  .cards-grid {
+    gap: 12px;
+  }
+  .vet-container {
+    padding: 36px 12px;
+  }
+  .tab-btn {
+    font-size: 13px;
+    padding: 6px 12px;
   }
 }

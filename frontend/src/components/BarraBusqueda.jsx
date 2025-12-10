@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { buscarOntologia, buscarDBpedia } from "../api";
 import "./Barrabusqueda.css";
 
 /* ============================================================
-   🔤 0. UI MULTILINGÜE (ES / EN / FR)
+   UI MULTILINGÜE ES / EN / FR
    ============================================================ */
 const ui = {
   es: {
@@ -48,7 +48,7 @@ const ui = {
 };
 
 /* ============================================================
-   ⭐ 1. STOPWORDS para limpiar consultas
+   STOPWORDS
    ============================================================ */
 function tokenizarBusqueda(termino) {
   const stopwords = new Set([
@@ -85,75 +85,40 @@ function tokenizarBusqueda(termino) {
 }
 
 /* ============================================================
-   ⭐ 2. MAPA MULTILINGÜE DE ESPECIES
+   MAPA MULTILINGÜE ESPECIES
    ============================================================ */
 const speciesMap = {
-  // Perros
   perro: { local: "Perro", db: "dog" },
-  perros: { local: "Perro", db: "dog" },
-  dog: { local: "Perro", db: "dog" },
   dogs: { local: "Perro", db: "dog" },
   chien: { local: "Perro", db: "dog" },
-
-  // Gatos
   gato: { local: "Gato", db: "cat" },
-  gatos: { local: "Gato", db: "cat" },
-  cat: { local: "Gato", db: "cat" },
-  cats: { local: "Gato", db: "cat" },
   chat: { local: "Gato", db: "cat" },
-
-  // Caballos
   caballo: { local: "Caballo", db: "horse" },
-  horse: { local: "Caballo", db: "horse" },
   cheval: { local: "Caballo", db: "horse" },
-
-  // Aves
-  ave: { local: "Aves", db: "bird" },
-  bird: { local: "Aves", db: "bird" },
-  oiseau: { local: "Aves", db: "bird" },
-
-  // Vacas
   vaca: { local: "Vaca", db: "cow" },
-  cow: { local: "Vaca", db: "cow" },
   vache: { local: "Vaca", db: "cow" },
-
-  // Cerdos
   cerdo: { local: "Cerdo", db: "pig" },
-  pig: { local: "Cerdo", db: "pig" },
   porc: { local: "Cerdo", db: "pig" },
 };
 
 /* ============================================================
-   ⭐ 3. DICCIONARIO MULTILINGÜE DE ENFERMEDADES / RAZAS
+   MAPA SEMÁNTICO (ENFERMEDADES / RAZAS)
    ============================================================ */
 const semanticMap = {
-  // Parvo
   parvovirose: "parvovirus",
-  "canine parvovirus": "parvovirus",
   parvovirus: "parvovirus",
-  parvo: "parvovirus",
-  cpv: "parvovirus",
-
-  // Moquillo
   distemper: "moquillo",
   "maladie de carré": "moquillo",
-  moquillo: "moquillo",
-
-  // Rabia
-  rage: "rabia",
   rabies: "rabia",
+  rage: "rabia",
   rabia: "rabia",
-
-  // Razas (marca de búsqueda de razas)
   breed: "breed",
   raza: "breed",
   race: "breed",
-  "race de chien": "breed",
-  "race de chat": "breed",
 };
 
 /* ============================================================
-   ⭐ 4. COMPONENTE PRINCIPAL
+   COMPONENTE PRINCIPAL
    ============================================================ */
 export default function BarraBusqueda() {
   const [query, setQuery] = useState("");
@@ -162,31 +127,32 @@ export default function BarraBusqueda() {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState("todos");
 
-  // 🌍 idioma actual de la interfaz (no simultáneo)
+  // idioma actual
   const [lang, setLang] = useState("es");
 
   /* ============================================================
-     ⭐ 5. DETECTAR SI EL USUARIO BUSCA UNA RAZA
+     AUTO-RECARGAR RESULTADOS AL CAMBIAR IDIOMA
      ============================================================ */
-  function isBreedSearch(texto) {
-    return ["breed", "raza", "race", "race de chien", "race de chat"].some(
-      (w) => texto.toLowerCase().includes(w)
+  useEffect(() => {
+    if (query.trim() !== "") {
+      handleSearch();
+    }
+  }, [lang]);
+
+  function isBreedSearch(text) {
+    return ["breed", "raza", "race"].some((w) =>
+      text.toLowerCase().includes(w)
     );
   }
 
-  /* ============================================================
-     ⭐ 6. DETECTAR ESPECIE
-     ============================================================ */
   function detectSpecies(term) {
     const words = term.toLowerCase().split(/\s+/);
-    for (const w of words) {
-      if (speciesMap[w]) return speciesMap[w];
-    }
+    for (const w of words) if (speciesMap[w]) return speciesMap[w];
     return null;
   }
 
   /* ============================================================
-     ⭐ 7. FUNCIÓN PRINCIPAL DE BÚSQUEDA
+     FUNCIÓN PRINCIPAL DE BÚSQUEDA
      ============================================================ */
   async function handleSearch() {
     let q = query.trim();
@@ -199,41 +165,25 @@ export default function BarraBusqueda() {
     setLoading(true);
     setError("");
 
-    // Normalizar semanticamente (parvo, moquillo, rage, rabies…)
     const qNorm = semanticMap[q.toLowerCase()] || q;
     const species = detectSpecies(qNorm);
     const breedMode = isBreedSearch(qNorm);
 
     try {
-      /* ==============================
-         🔍 BÚSQUEDA LOCAL (ONTOLOGÍA)
-         ============================== */
-      let local = [];
-      if (species) {
-        const res = await buscarOntologia(species.local, lang);
-        local = (res.results || []).map((x) => ({
-          ...x,
-          fuente: "local",
-          idioma: lang,
-        }));
-      } else {
-        const res = await buscarOntologia(qNorm, lang);
-        local = (res.results || []).map((x) => ({
-          ...x,
-          fuente: "local",
-          idioma: lang,
-        }));
-      }
+      /* 🔍 BÚSQUEDA LOCAL */
+      const resLocal = await buscarOntologia(
+        species ? species.local : qNorm,
+        lang
+      );
+      const local = (resLocal.results || []).map((x) => ({
+        ...x,
+        fuente: "local",
+        idioma: lang,
+      }));
 
-      /* ==============================
-         🔎 BÚSQUEDA EN DBPEDIA
-         ============================== */
+      /* 🌐 DBPEDIA */
       let tokens = tokenizarBusqueda(qNorm);
-
-      // Forzar tokens si es búsqueda de razas
-      if (breedMode) {
-        tokens = ["breed", "dog", "cat", ...tokens];
-      }
+      if (breedMode) tokens = ["breed", "dog", "cat", ...tokens];
 
       const resDB = await buscarDBpedia(qNorm, tokens, lang);
       const dbpedia = (resDB.results || []).map((x) => ({
@@ -242,15 +192,10 @@ export default function BarraBusqueda() {
         idioma: lang,
       }));
 
-      /* ==============================
-         📌 COMBINAR RESULTADOS
-         ============================== */
       const all = [...local, ...dbpedia];
       setResults(all);
 
-      if (all.length === 0) {
-        setError(ui[lang].noResults(q));
-      }
+      if (all.length === 0) setError(ui[lang].noResults(q));
     } catch (err) {
       console.error(err);
       setError("Error ejecutando búsqueda");
@@ -259,56 +204,43 @@ export default function BarraBusqueda() {
     setLoading(false);
   }
 
-  /* ============================================================
-     ⭐ 8. FILTROS POR TABS
-     ============================================================ */
   const local = results.filter((r) => r.fuente === "local");
   const dbpedia = results.filter((r) => r.fuente === "dbpedia");
-
   const visible = tab === "todos" ? results : tab === "local" ? local : dbpedia;
 
   const t = ui[lang];
 
   return (
     <section className="vet-container">
-      {/* HEADER */}
       <header className="vet-header">
-        <div className="vet-header-top">
+        <div className="header-row">
           <div>
             <h1 className="vet-title">{t.title}</h1>
             <p className="vet-desc">{t.desc}</p>
           </div>
 
-          {/* 🌍 Selector de idioma (no simultáneo) */}
-          <div className="lang-switcher">
-            <button
-              className={lang === "es" ? "lang-btn active" : "lang-btn"}
+          {/* Banderas reales */}
+          <div className="lang-flags">
+            <img
+              src="/frontend/src/assets/ES.jpg"
+              className={lang === "es" ? "flag active" : "flag"}
               onClick={() => setLang("es")}
-              title="Español"
-            >
-              🇪🇸
-            </button>
-
-            <button
-              className={lang === "en" ? "lang-btn active" : "lang-btn"}
+            />
+            <img
+              src="/frontend/src/assets/EN.png"
+              className={lang === "en" ? "flag active" : "flag"}
               onClick={() => setLang("en")}
-              title="English"
-            >
-              EN
-            </button>
-
-            <button
-              className={lang === "fr" ? "lang-btn active" : "lang-btn"}
+            />
+            <img
+              src="/frontend/src/assets/FR.jpg"
+              className={lang === "fr" ? "flag active" : "flag"}
               onClick={() => setLang("fr")}
-              title="Français"
-            >
-              🇫🇷
-            </button>
+            />
           </div>
         </div>
       </header>
 
-      {/* SEARCH BAR */}
+      {/* Search bar */}
       <div className="vet-search-wrap">
         <div className="vet-search-bar">
           <input
@@ -336,26 +268,26 @@ export default function BarraBusqueda() {
         </div>
       </div>
 
-      {loading && <p className="vet-status">🔍 …</p>}
+      {loading && <p className="vet-status">🔍 ...</p>}
       {error && <p className="vet-error">⚠ {error}</p>}
 
       {/* TABS */}
       {results.length > 0 && (
         <div className="tabs-container">
           <button
-            className={`tab-btn ${tab === "todos" ? "active" : ""}`}
+            className={tab === "todos" ? "tab-btn active" : "tab-btn"}
             onClick={() => setTab("todos")}
           >
             {t.tabAll} ({results.length})
           </button>
           <button
-            className={`tab-btn ${tab === "local" ? "active" : ""}`}
+            className={tab === "local" ? "tab-btn active" : "tab-btn"}
             onClick={() => setTab("local")}
           >
             {t.tabLocal} ({local.length})
           </button>
           <button
-            className={`tab-btn ${tab === "dbpedia" ? "active" : ""}`}
+            className={tab === "dbpedia" ? "tab-btn active" : "tab-btn"}
             onClick={() => setTab("dbpedia")}
           >
             {t.tabDB} ({dbpedia.length})
@@ -379,12 +311,8 @@ export default function BarraBusqueda() {
                 {item.idioma === "en" && " 🇬🇧"}
                 {item.idioma === "es" && " 🇪🇸"}
               </h3>
-              <span className="source-badge">
-                {item.fuente === "local" ? "LOCAL" : "DBPEDIA"}
-              </span>
             </div>
 
-            {/* LOCAL */}
             {item.fuente === "local" && (
               <>
                 {item.especie && (
@@ -397,34 +325,19 @@ export default function BarraBusqueda() {
                     <strong>{t.category}:</strong> {item.categoria}
                   </p>
                 )}
-
-                {item.sintomas?.length > 0 && (
-                  <ul>
-                    {item.sintomas.map((s, id) => (
-                      <li key={id}>{s}</li>
-                    ))}
-                  </ul>
-                )}
               </>
             )}
 
-            {/* DBPEDIA */}
             {item.fuente === "dbpedia" && (
               <>
                 {item.thumbnail && (
-                  <img
-                    src={item.thumbnail}
-                    className="thumbnail"
-                    alt={item.nombre}
-                  />
+                  <img src={item.thumbnail} className="thumbnail" />
                 )}
                 {item.descripcion && <p>{item.descripcion}</p>}
-
                 {item.dbpedia_uri && (
                   <a
                     href={item.dbpedia_uri}
                     target="_blank"
-                    rel="noopener noreferrer"
                     className="dbpedia-link"
                   >
                     Ver en DBpedia →

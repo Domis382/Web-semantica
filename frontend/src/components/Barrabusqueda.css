@@ -331,3 +331,52 @@ border-radius: 50%;
   .tab-btn { font-size: 13px; padding: 6px 12px; }
 }
 
+/* ============================================================
+   🌍 SELECTOR DE IDIOMA CON BANDERAS (ES / EN / FR)
+   ============================================================ */
+
+.lang-switcher {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.lang-btn {
+  width: 45px;
+  height: 45px;
+  font-size: 24px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.10);
+}
+
+.lang-btn:hover {
+  transform: translateY(-2px);
+  border-color: #06b6d4;
+  box-shadow: 0 6px 14px rgba(6, 182, 212, 0.25);
+}
+
+.lang-btn.active {
+  background: #06b6d4;
+  border-color: #06b6d4;
+  color: white;
+  box-shadow: 0 8px 16px rgba(6, 182, 212, 0.35);
+  transform: translateY(-2px);
+}
+
+/* Responsivo */
+@media (max-width: 640px) {
+  .lang-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+}

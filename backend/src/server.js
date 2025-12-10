@@ -24,19 +24,25 @@ app.get("/api/health", (req, res) => {
 
 /**
  * Búsqueda local sobre la ontología veterinaria
+ * Ahora recibe ?lang=es|en|fr
  */
 app.get("/api/search", (req, res) => {
   const q = req.query.q || "";
-  const results = searchConcepts(q);
+  const lang = (req.query.lang || "es").toLowerCase();
+
+  const results = searchConcepts(q, lang);
 
   res.json({
     query: q,
+    lang,
     count: results.length,
     results,
   });
 });
+
 /**
  * Búsqueda en DBpedia
+ * También respeta ?lang=es|en|fr para labels/abstracts
  */
 app.get("/api/search-dbpedia", async (req, res) => {
   const q = req.query.q || "";
@@ -45,13 +51,15 @@ app.get("/api/search-dbpedia", async (req, res) => {
     .map((t) => t.trim())
     .filter(Boolean);
 
+  const lang = (req.query.lang || "en").toLowerCase();
+
   if (!q) {
-    return res.json({ query: q, count: 0, results: [] });
+    return res.json({ query: q, lang, count: 0, results: [] });
   }
 
   try {
-    const results = await searchDBpedia(q, tokens);
-    res.json({ query: q, count: results.length, results });
+    const results = await searchDBpedia(q, tokens, lang);
+    res.json({ query: q, lang, count: results.length, results });
   } catch (err) {
     console.error("Error en DBpedia:", err);
     res.status(500).json({
@@ -65,8 +73,11 @@ app.get("/api/search-dbpedia", async (req, res) => {
 //  FUNCIÓN searchDBpedia()
 // ==========================
 
-async function searchDBpedia(query, tokens = []) {
+async function searchDBpedia(query, tokens = [], lang = "en") {
   const DBPEDIA_ENDPOINT = "https://dbpedia.org/sparql";
+
+  // Solo aceptamos es/en/fr – en otro caso, caemos a inglés
+  const DB_LANG = ["es", "en", "fr"].includes(lang) ? lang : "en";
 
   // Traducciones útiles ES -> EN para armar mejor la búsqueda
   const termTranslations = {
@@ -151,10 +162,13 @@ async function searchDBpedia(query, tokens = []) {
     SELECT DISTINCT ?item ?label ?thumbnail ?abstract
     WHERE {
       ?item rdfs:label ?label .
-      FILTER(LANG(?label) = "en")
+      FILTER(LANG(?label) = "${DB_LANG}")
 
       OPTIONAL { ?item dbo:thumbnail ?thumbnail . }
-      OPTIONAL { ?item dbo:abstract  ?abstract  . FILTER(LANG(?abstract) = "en") }
+      OPTIONAL { 
+        ?item dbo:abstract  ?abstract  . 
+        FILTER(LANG(?abstract) = "${DB_LANG}") 
+      }
 
       FILTER(${filterConditions})
     }

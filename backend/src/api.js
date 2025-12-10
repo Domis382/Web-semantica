@@ -1,9 +1,16 @@
-export async function buscarDBpedia(q, tokens) {
-  const params = new URLSearchParams({
-    q,
-    tokens: tokens.join(","),
-  });
+const API_URL = "http://localhost:4000";
 
-  const res = await fetch(`http://localhost:4000/api/search-dbpedia?${params}`);
+export async function buscarOntologia(q, lang = "es") {
+  const url = `${API_URL}/api/search?q=${encodeURIComponent(q)}&lang=${lang}`;
+  const res = await fetch(url);
+  return res.json();
+}
+
+export async function buscarDBpedia(q, tokens = [], lang = "es") {
+  const url =
+    `${API_URL}/api/search-dbpedia?q=${encodeURIComponent(q)}` +
+    `&tokens=${encodeURIComponent(tokens.join(","))}` +
+    `&lang=${lang}`;
+  const res = await fetch(url);
   return res.json();
 }

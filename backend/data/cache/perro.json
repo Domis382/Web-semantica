@@ -1,0 +1,26 @@
+[
+  {
+    "uri": "http://dbpedia.org/resource/Courage_the_Cowardly_Dog",
+    "dbpedia_uri": "http://dbpedia.org/resource/Courage_the_Cowardly_Dog",
+    "nombre": "Courage the Cowardly Dog",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/Courage_The_Cowardly_Dog_logo.png?width=300",
+    "atributos": {}
+  },
+  {
+    "uri": "http://dbpedia.org/resource/List_of_Courage_the_Cowardly_Dog_characters",
+    "dbpedia_uri": "http://dbpedia.org/resource/List_of_Courage_the_Cowardly_Dog_characters",
+    "nombre": "Katz (Courage the Cowardly Dog)",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/Courage-Dog.jpg?width=300",
+    "atributos": {}
+  },
+  {
+    "uri": "http://dbpedia.org/resource/Red_Dog_(Pilbara)",
+    "dbpedia_uri": "http://dbpedia.org/resource/Red_Dog_(Pilbara)",
+    "nombre": "Red Dog (Pilbara)",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/Red_Dog_Statue_Front_View.jpg?width=300",
+    "atributos": {}
+  }
+]

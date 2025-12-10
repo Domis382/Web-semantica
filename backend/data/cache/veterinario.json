@@ -1,0 +1,24 @@
+[
+  {
+    "uri": "http://dbpedia.org/resource/Category:University_of_Agronomic_Sciences_and_Veterinary_Medicine_of_Bucharest",
+    "dbpedia_uri": "http://dbpedia.org/resource/Category:University_of_Agronomic_Sciences_and_Veterinary_Medicine_of_Bucharest",
+    "nombre": "University of Agronomic Sciences and Veterinary Medicine of Bucharest",
+    "descripcion": "Descripción no disponible",
+    "atributos": {}
+  },
+  {
+    "uri": "http://dbpedia.org/resource/University_of_Agronomic_Sciences_and_Veterinary_Medicine_of_Bucharest",
+    "dbpedia_uri": "http://dbpedia.org/resource/University_of_Agronomic_Sciences_and_Veterinary_Medicine_of_Bucharest",
+    "nombre": "University of Agronomic Sciences and Veterinary Medicine of Bucharest",
+    "descripcion": "Descripción no disponible",
+    "thumbnail": "http://commons.wikimedia.org/wiki/Special:FilePath/Logo_of_USAMVB.png?width=300",
+    "atributos": {}
+  },
+  {
+    "uri": "http://dbpedia.org/resource/Faculty_of_Veterinary_Science_of_Córdoba,_Spain",
+    "dbpedia_uri": "http://dbpedia.org/resource/Faculty_of_Veterinary_Science_of_Córdoba,_Spain",
+    "nombre": "Faculty of Veterinary Science of Córdoba, Spain",
+    "descripcion": "Descripción no disponible",
+    "atributos": {}
+  }
+]

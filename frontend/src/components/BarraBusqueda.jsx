@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { buscarOntologia, buscarDBpedia } from "../api";
 import "./Barrabusqueda.css";
-
+//
 // Función para tokenizar búsqueda (elimina stopwords)
 function tokenizarBusqueda(termino) {
   const stopwords = new Set([

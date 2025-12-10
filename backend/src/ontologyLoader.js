@@ -1,4 +1,3 @@
-// backend/src/ontologyLoader.js
 const fs = require("fs");
 const path = require("path");
 const { RdfXmlParser } = require("rdfxml-streaming-parser");
@@ -37,8 +36,9 @@ const P_ESPECIALIDAD = BASE + "especialidad";
 const P_FECHA_CONSULTA = BASE + "fecha_consulta";
 const P_MOTIVO_CONSULTA = BASE + "Motivo_Consulta";
 
-// rdfs:label para etiquetas multilingües
+// rdfs:label y rdfs:comment para etiquetas/descr. multilingües
 const RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
+const RDFS_COMMENT = "http://www.w3.org/2000/01/rdf-schema#comment";
 
 // --------------------------------------------------------
 //   MAPAS DE ENTIDADES
@@ -46,7 +46,6 @@ const RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
 let enfermedades = new Map();
 let sintomas = new Map();
 
-// NUEVOS
 let mascotas = new Map();
 let propietarios = new Map();
 let medicamentos = new Map();
@@ -57,19 +56,23 @@ let consultas = new Map();
 // Etiquetas multilingües por recurso
 // Map<uri, { es?:string, en?:string, fr?:string, ... }>
 let labels = new Map();
+// Comentarios multilingües por recurso
+// Map<uri, { es?:string, en?:string, fr?:string, ... }>
+let comments = new Map();
 
 // --------------------------------------------------------
-//   HELPERS
+//   HELPERS LABELS / COMMENTS
 // --------------------------------------------------------
 function setLabel(subjectUri, lang, value) {
-  if (!lang) return; // sin xml:lang no nos sirve para modo multilingüe real
+  if (!lang) return; // sin xml:lang no es útil para multilingüe real
+  lang = lang.toLowerCase();
   if (!labels.has(subjectUri)) {
     labels.set(subjectUri, {});
   }
-  labels.get(subjectUri)[lang.toLowerCase()] = value;
+  labels.get(subjectUri)[lang] = value;
 }
 
-function getLabel(subjectUri, lang) {
+function getLabel(subjectUri, lang = "es") {
   const map = labels.get(subjectUri);
   if (!map) return null;
 
@@ -77,11 +80,55 @@ function getLabel(subjectUri, lang) {
   return map[l] || map.es || map.en || map.fr || null;
 }
 
+function setComment(subjectUri, lang, value) {
+  if (!lang) return;
+  lang = lang.toLowerCase();
+  if (!comments.has(subjectUri)) {
+    comments.set(subjectUri, {});
+  }
+  comments.get(subjectUri)[lang] = value;
+}
+
+function getComment(subjectUri, lang = "es") {
+  const map = comments.get(subjectUri);
+  if (!map) return null;
+
+  const l = lang.toLowerCase();
+  return map[l] || map.es || map.en || map.fr || null;
+}
+
+// --------------------------------------------------------
+//   TRADUCCIÓN DE ESPECIES / CATEGORÍAS
+// --------------------------------------------------------
+const translateTerm = {
+  // Especies
+  Caninos: { es: "Caninos", en: "Canines", fr: "Canidés" },
+  Felinos: { es: "Felinos", en: "Felines", fr: "Félins" },
+  Aves: { es: "Aves", en: "Birds", fr: "Oiseaux" },
+  Reptiles: { es: "Reptiles", en: "Reptiles", fr: "Reptiles" },
+  Roedores: { es: "Roedores", en: "Rodents", fr: "Rongeurs" },
+
+  // Categorías
+  Infecciosa: { es: "Infecciosa", en: "Infectious", fr: "Infectieuse" },
+  Parasitaria: { es: "Parasitaria", en: "Parasitic", fr: "Parasitaire" },
+  Viral: { es: "Viral", en: "Viral", fr: "Virale" },
+  Bacteriana: { es: "Bacteriana", en: "Bacterial", fr: "Bactérienne" },
+  Crónica: { es: "Crónica", en: "Chronic", fr: "Chronique" },
+};
+
+function translateValue(value, lang = "es") {
+  if (!value) return value;
+  const entry = translateTerm[value];
+  if (!entry) return value;
+  const L = lang.toLowerCase();
+  return entry[L] || value;
+}
+
 // --------------------------------------------------------
 //   LOAD ONTOLOGY
 // --------------------------------------------------------
 function loadOntology() {
-  const filePath = path.join(__dirname, "../data/VeterinariaFinal");
+  const filePath = path.join(__dirname, "../data/Veterinaria_multilingual.rdf");
 
   const rdfStream = fs.createReadStream(filePath);
   const parser = new RdfXmlParser();
@@ -95,12 +142,18 @@ function loadOntology() {
     //   LABELS MULTILINGÜES (RDFS)
     // =============================
     if (p === RDFS_LABEL && o.termType === "Literal") {
-      // o.language viene de rdfxml-streaming-parser
       setLabel(s, o.language || "", o.value);
     }
 
     // =============================
-    //   SINTOMAS
+    //   COMMENTS MULTILINGÜES
+    // =============================
+    if (p === RDFS_COMMENT && o.termType === "Literal") {
+      setComment(s, o.language || "", o.value);
+    }
+
+    // =============================
+    //   SINTOMAS (legacy)
     // =============================
     if (p === P_NOMBRE_S && o.termType === "Literal") {
       sintomas.set(s, o.value);
@@ -112,7 +165,7 @@ function loadOntology() {
     if (!enfermedades.has(s)) {
       enfermedades.set(s, {
         uri: s,
-        nombre: null, // nombre "legacy"
+        nombre: null, // legacy
         especie: null,
         categoria: null,
         sintomas: [],
@@ -254,6 +307,7 @@ function loadOntology() {
     console.log("Veterinarios:", veterinarios.size);
     console.log("Consultas:", consultas.size);
     console.log("Labels multilingües:", labels.size);
+    console.log("Comments multilingües:", comments.size);
   });
 
   rdfStream.pipe(parser);
@@ -287,7 +341,7 @@ function normalizeQuery(q) {
 
 // --------------------------------------------------------
 //   BÚSQUEDA GENERAL (TODAS LAS ENTIDADES)
-//   Ahora con soporte de idioma
+//   con soporte de idioma en TODO
 // --------------------------------------------------------
 function searchConcepts(rawQuery, lang = "es") {
   const q = normalizeQuery(rawQuery).toLowerCase();
@@ -295,24 +349,47 @@ function searchConcepts(rawQuery, lang = "es") {
 
   const L = lang.toLowerCase();
 
-  // ENFERMEDADES
+  // =============================
+  //   ENFERMEDADES
+  // =============================
   for (const enf of enfermedades.values()) {
     const nombreLabel = getLabel(enf.uri, L) || enf.nombre || "";
     const nombre = nombreLabel.toLowerCase();
-    const especie = (enf.especie || "").toLowerCase();
-    const categoria = (enf.categoria || "").toLowerCase();
 
-    if (nombre.includes(q) || especie.includes(q) || categoria.includes(q)) {
+    const especieRaw = enf.especie || "";
+    const categoriaRaw = enf.categoria || "";
+
+    const especieTrad = translateValue(especieRaw, L);
+    const categoriaTrad = translateValue(categoriaRaw, L);
+
+    const especie = especieTrad.toLowerCase();
+    const categoria = categoriaTrad.toLowerCase();
+
+    const descripcion = getComment(enf.uri, L) || null;
+
+    if (
+      nombre.includes(q) ||
+      especie.includes(q) ||
+      categoria.includes(q) ||
+      (descripcion || "").toLowerCase().includes(q)
+    ) {
       results.push({
         tipo: "Enfermedad",
         uri: enf.uri,
         nombre: nombreLabel || enf.nombre,
-        especie: enf.especie,
-        categoria: enf.categoria,
+        descripcion,
+        especie: especieTrad,
+        categoria: categoriaTrad,
         sintomas: enf.sintomas.map((uri) => {
+          // 1) Usar label multilingüe si existe
+          const lbl = getLabel(uri, L);
+          if (lbl) return lbl;
+
+          // 2) Usar nombreLegacy en español si existe
           const n = sintomas.get(uri);
           if (n) return n;
 
+          // 3) Fallback al fragmento del URI
           const last = uri.split("/").pop() || "";
           return last.replace(/_/g, " ");
         }),
@@ -320,47 +397,95 @@ function searchConcepts(rawQuery, lang = "es") {
     }
   }
 
-  // MASCOTAS
+  // =============================
+  //   MASCOTAS
+  // =============================
   for (const m of mascotas.values()) {
-    if ((m.nombre?.toLowerCase() || "").includes(q)) {
-      results.push({ tipo: "Mascota", ...m });
+    const label = getLabel(m.uri, L) || m.nombre || "";
+    const raza = (m.raza || "").toLowerCase();
+
+    if (label.toLowerCase().includes(q) || raza.includes(q)) {
+      results.push({
+        tipo: "Mascota",
+        ...m,
+        nombre: label,
+      });
     }
   }
 
-  // PROPIETARIOS
+  // =============================
+  //   PROPIETARIOS
+  // =============================
   for (const p of propietarios.values()) {
-    if ((p.nombre?.toLowerCase() || "").includes(q)) {
-      results.push({ tipo: "Propietario", ...p });
+    const label = getLabel(p.uri, L) || p.nombre || "";
+    if (label.toLowerCase().includes(q)) {
+      results.push({
+        tipo: "Propietario",
+        ...p,
+        nombre: label,
+      });
     }
   }
 
-  // MEDICAMENTOS
+  // =============================
+  //   MEDICAMENTOS
+  // =============================
   for (const m of medicamentos.values()) {
-    if ((m.nombre?.toLowerCase() || "").includes(q)) {
-      results.push({ tipo: "Medicamento", ...m });
+    const label = getLabel(m.uri, L) || m.nombre || "";
+    const principio = (m.principio || "").toLowerCase();
+
+    if (label.toLowerCase().includes(q) || principio.includes(q)) {
+      results.push({
+        tipo: "Medicamento",
+        ...m,
+        nombre: label,
+      });
     }
   }
 
-  // TRATAMIENTOS
+  // =============================
+  //   TRATAMIENTOS
+  // =============================
   for (const t of tratamientos.values()) {
-    if ((t.instrucciones?.toLowerCase() || "").includes(q)) {
-      results.push({ tipo: "Tratamiento", ...t });
+    const label = getLabel(t.uri, L) || t.instrucciones || "";
+    if (label.toLowerCase().includes(q)) {
+      results.push({
+        tipo: "Tratamiento",
+        ...t,
+        instrucciones: label,
+      });
     }
   }
 
-  // VETERINARIOS
+  // =============================
+  //   VETERINARIOS
+  // =============================
   for (const v of veterinarios.values()) {
-    if ((v.nombre?.toLowerCase() || "").includes(q)) {
-      results.push({ tipo: "Veterinario", ...v });
+    const label = getLabel(v.uri, L) || v.nombre || "";
+    const especialidad = (v.especialidad || "").toLowerCase();
+
+    if (label.toLowerCase().includes(q) || especialidad.includes(q)) {
+      results.push({
+        tipo: "Veterinario",
+        ...v,
+        nombre: label,
+      });
     }
   }
 
-  // CONSULTAS
+  // =============================
+  //   CONSULTAS
+  // =============================
   for (const c of consultas.values()) {
-    const fecha = c.fecha?.toLowerCase() || "";
-    const motivo = c.motivo?.toLowerCase() || "";
-    if (fecha.includes(q) || motivo.includes(q)) {
-      results.push({ tipo: "Consulta", ...c });
+    const label = getLabel(c.uri, L) || c.motivo || "";
+    const fecha = (c.fecha || "").toLowerCase();
+
+    if (label.toLowerCase().includes(q) || fecha.includes(q)) {
+      results.push({
+        tipo: "Consulta",
+        ...c,
+        motivo: label,
+      });
     }
   }
 

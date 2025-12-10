@@ -222,17 +222,17 @@ export default function BarraBusqueda() {
           {/* Banderas reales */}
           <div className="lang-flags">
             <img
-              src="/frontend/src/assets/ES.jpg"
+              src="/flags/ES.jpg"
               className={lang === "es" ? "flag active" : "flag"}
               onClick={() => setLang("es")}
             />
             <img
-              src="/frontend/src/assets/EN.png"
+              src="/flags/EN.png"
               className={lang === "en" ? "flag active" : "flag"}
               onClick={() => setLang("en")}
             />
             <img
-              src="/frontend/src/assets/FR.jpg"
+              src="/flags/FR.jpg"
               className={lang === "fr" ? "flag active" : "flag"}
               onClick={() => setLang("fr")}
             />
